@@ -69,20 +69,21 @@ import diffDOM from 'diff-dom';
   var toCompare = temp.cloneNode();
   toCompare.textContent = 'Login';
   toCompare.className = 'btn--primary btn';
-  toCompare.id = 'c';
 
-  debugger;
-
+  // debugger;
+  console.time('finding best match...')
   var a = [].slice.call(findCandidates(toCompare))
     .reduce((fold, candidate, index) => {
-      console.debug("candidate:", candidate);
+      // console.debug("candidate:", candidate);
       var currentDiff = DD.diff(candidate, toCompare).length;
       if (currentDiff < fold.diff) {
         fold = { el: candidate, diff: currentDiff };
       };
       return fold;
     }, { diff: Infinity, el: null }).el;
-
-  debugger;
+  console.timeEnd('finding best match...')
+  console.debug("best match to", toCompare, ':');
+  console.debug(a);
+  // debugger;
   
 })(window, document, undefined);
