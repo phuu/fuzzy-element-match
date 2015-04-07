@@ -5,7 +5,7 @@ OUT = build/build.js
 .PHONY: all install run watch serve
 
 all:
-	@$(BIN)/jspm bundle-sfx $(ENTRY) $(OUT)
+	@$(BIN)/jspm bundle-sfx --skip-source-maps $(ENTRY) $(OUT)
 
 install:
 	@echo Dependencies...

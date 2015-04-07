@@ -4,6 +4,7 @@
     "dependencies": {
       "diff-dom": "npm:diff-dom@^1.0.0",
       "html-to-vdom": "npm:html-to-vdom@^0.5.5",
+      "lodash": "npm:lodash@^3.6.0",
       "virtual-dom": "npm:virtual-dom@^2.0.1"
     },
     "devDependencies": {

@@ -16,7 +16,7 @@
     },
     "parser": "babel-eslint",
     "rules": {
-        "quotes": [2, "single"],
+        "quotes": [1, "single"],
         "no-console": 0,
         "new-cap": 0,
         "comma-spacing": 1
