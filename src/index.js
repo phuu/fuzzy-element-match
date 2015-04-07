@@ -5,10 +5,13 @@ import createElement from 'virtual-dom/create-element'; // decode - takes "model
 import htv from 'html-to-vdom';
 import diffDOM from 'diff-dom';
 
-(function (window, document, undefined) {
+const utils = {
+  identity: x => x
+};
 
-  'use strict';
-  console.debug("fuzzy-element-match ======");
+(function (window, document) {
+
+  console.debug('fuzzy-element-match ======');
 
   const DD = new diffDOM(true, 500);
 
@@ -17,20 +20,20 @@ import diffDOM from 'diff-dom';
     VText: VText
   });
 
-  var toSpec = element => { return htmlToVDOM(element.outerHTML); }; // takes element returns a "model"
-  var toElement = spec => { return createElement(spec); }; // take a spec returns element
+  // takes element returns a "model"
+  var toSpec = element => { return htmlToVDOM(element.outerHTML); };
+  // take a spec returns element
+  var toElement = spec => { return createElement(spec); };
   
   const props = {
-    className: "btn btn--primary",
+    className: 'btn btn--primary',
     id: 'lol',
     'data-foo': 'walter'
   };
 
-  var identity = (x) => x;
-
   var picker = (obj) => {
     return (attr) => {
-      return obj[attr] || identity;
+      return obj[attr] || utils.identity;
     };
   };
 
@@ -50,40 +53,38 @@ import diffDOM from 'diff-dom';
       return fold.concat(document.querySelectorAll(selector));
     }, []);
 
-  var extractSelectors = (model) => {  
+  var extractSelectors = model => {  
     return [model.tagName].concat();
-  }
+  };
 
   // finds a list of candidates based on a model
   function findCandidates(model) {
-    console.debug("findCandidates() ======", arguments);
-    console.debug("model:", model);
+    console.debug('findCandidates() ======', arguments);
+    console.debug('model:', model);
     return document.querySelectorAll(model.tagName);
   }
 
-  var test = ranDOM.generate(10)
-      .map(document.body.appendChild.bind(document.body));
+  ranDOM.generate(10)
+    .map(document.body.appendChild.bind(document.body));
 
   var temp = document.querySelector('#myButton');
-  
+
   var toCompare = temp.cloneNode();
   toCompare.textContent = 'Login';
   toCompare.className = 'btn--primary btn';
 
   // debugger;
-  console.time('finding best match...')
+  console.time('finding best match...');
   var a = [].slice.call(findCandidates(toCompare))
-    .reduce((fold, candidate, index) => {
+    .reduce((fold, candidate) => {
       // console.debug("candidate:", candidate);
       var currentDiff = DD.diff(candidate, toCompare).length;
       if (currentDiff < fold.diff) {
         fold = { el: candidate, diff: currentDiff };
-      };
+      }
       return fold;
     }, { diff: Infinity, el: null }).el;
-  console.timeEnd('finding best match...')
-  console.debug("best match to", toCompare, ':');
+  console.timeEnd('finding best match...');
+  console.debug('best match to', toCompare, ':');
   console.debug(a);
-  // debugger;
-  
 })(window, document, undefined);
