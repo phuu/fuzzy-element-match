@@ -1,21 +1,12 @@
-BIN = ./node_modules/.bin/
-ENTRY = src/index
-OUT = build/build.js
+SELENIUM_JAR = selenium-server-standalone-2.45.0.jar
+SELENIUM_URL = http://selenium-release.storage.googleapis.com/2.45/$(SELENIUM_JAR)
 
-.PHONY: all install run watch serve
-
-all:
-	@$(BIN)/jspm bundle-sfx --skip-source-maps $(ENTRY) $(OUT)
+.PHONY: install selenium-server
 
 install:
-	@echo Dependencies...
-	@(npm install)
-	@$(BIN)jspm install
+	@echo "    Downloading selenium-server..."
+	@wget $(SELENIUM_URL) --quiet -O $(SELENIUM_JAR)
+	@echo "    Done"
 
-serve:
-	@(python -m SimpleHTTPServer 9876)
-
-watch:
-	@$(BIN)nodemon -q -w $(dir $(ENTRY)) --exec make
-
-run: install all serve
+selenium-server:
+	@java -jar $(SELENIUM_JAR)

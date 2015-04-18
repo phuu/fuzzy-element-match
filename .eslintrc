@@ -1,6 +1,6 @@
 {
     "env": {
-        "browser": true
+        "node": true
     },
     "ecmaFeatures": {
         "arrowFunctions": true,
@@ -16,7 +16,7 @@
     },
     "parser": "babel-eslint",
     "rules": {
-        "quotes": [1, "single"],
+        "quotes": [2, "single"],
         "no-console": 0,
         "new-cap": 0,
         "comma-spacing": 1

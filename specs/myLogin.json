@@ -1,0 +1,7 @@
+{
+  "selector": "#myLogin",
+  "name": "myLogin",
+  "tag": "button",
+  "classes": "btn btn--primary btn--large NEW_CLASS",
+  "id": "myLogin"
+}
