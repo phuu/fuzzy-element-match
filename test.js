@@ -3,6 +3,13 @@ var ElementMatcher = require('./fem');
 
 var session;
 
+var quitSession = function () {
+    try { session.quit() } catch (e) {}
+};
+
+process.on('SIGINT', quitSession);
+process.on('exit', quitSession);
+
 var tracker = new ElementMatcher({ path: './specs' });
 
 var server = new Server('http://localhost:4444/wd/hub');
@@ -19,11 +26,15 @@ server
     .then(function () {
         return tracker.get(session, 'myLogin');
     })
+    .then(function (el) {
+        console.log('el:', el);
+        return el.click();
+    })
     .catch(function (err) {
-        console.log('error() ======');
-        console.log(err);
+        console.log('errored() ======');
+        // console.log(err);
     })
     .then(function () {
         console.log('quitting session ======');
-        session.quit();
+        // session.quit();
     });

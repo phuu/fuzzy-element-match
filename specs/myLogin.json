@@ -1,7 +1,5 @@
 {
-  "selector": "#myLogin",
   "name": "myLogin",
-  "tag": "button",
-  "classes": "btn btn--primary btn--large NEW_CLASS",
-  "id": "myLogin"
+  "selector": "#myLogin",
+  "el": "<button id=\"myLogin\" class=\"btn btn--primary btn--large NEW_CLASS\" onclick=\"javascript:alert(&quot;lol&quot;);\">Click me!</button>"
 }
