@@ -1,3 +1,5 @@
+'use strict';
+
 import VNode from 'virtual-dom/vnode/vnode';
 import VText from 'virtual-dom/vnode/vtext';
 import diff from 'virtual-dom/diff';

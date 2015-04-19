@@ -1,5 +1,0 @@
-{
-  "name": "myLogin",
-  "selector": "#myLogin",
-  "el": "<button id=\"myLogin\" class=\"btn btn--primary btn--large NEW_CLASS\" onclick=\"javascript:alert(&quot;lol&quot;);\">Click me!</button>"
-}

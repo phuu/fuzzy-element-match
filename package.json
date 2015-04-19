@@ -9,5 +9,33 @@
     "lodash": "^3.7.0",
     "virtual-dom": "^2.0.1",
     "webdriver-manager": "^4.0.0"
-  }
+  },
+  "name": "integrator-match",
+  "description": "fuzzy-element-match ===",
+  "version": "0.0.1",
+  "main": "fem.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/phuu/integrator-match.git"
+  },
+  "keywords": [
+    "match",
+    "track",
+    "dom",
+    "diff",
+    "virtualdom",
+    "integrator",
+    "keep",
+    "nodes",
+    "elements"
+  ],
+  "author": "Walter Carvalho (@waltfy)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/phuu/integrator-match/issues"
+  },
+  "homepage": "https://github.com/phuu/integrator-match"
 }
