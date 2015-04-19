@@ -152,8 +152,8 @@ var sum = (fold, n) => fold + n;
 
 export default class ElementMatcher {
 
-    constructor(opts={}) {
-        console.log('ElementMatcher::constructor() =====');
+    constructor(opts={ }) {
+        // console.log('ElementMatcher::constructor() =====');
         SPEC_STORE = new Store(opts.path || 'specs', { pretty: typeof opts.pretty === 'undefined' ? true : opts.pretty });
     }
 

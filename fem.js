@@ -178,7 +178,7 @@ var ElementMatcher = (function () {
 
         _classCallCheck(this, ElementMatcher);
 
-        console.log("ElementMatcher::constructor() =====");
+        // console.log('ElementMatcher::constructor() =====');
         SPEC_STORE = new Store(opts.path || "specs", { pretty: typeof opts.pretty === "undefined" ? true : opts.pretty });
     }
 
