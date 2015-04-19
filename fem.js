@@ -12,8 +12,6 @@ var VText = _interopRequire(require("virtual-dom/vnode/vtext"));
 
 var diff = _interopRequire(require("virtual-dom/diff"));
 
-var createElement = _interopRequire(require("virtual-dom/create-element"));
-
 var toVdom = _interopRequire(require("html-to-vdom"));
 
 var Store = _interopRequire(require("jfs"));
@@ -25,11 +23,13 @@ var htmlToVDOM = toVdom({
     VText: VText
 });
 
+var noop = function () {};
+
 /** specifies where all the specs are persisted – https://github.com/flosse/json-file-store#json-file-store
  *
  * FIXME: we must be able to initialise it with a custom path, move it into constructor?
  */
-var SPEC_STORE = new Store("specs", { pretty: true });
+var SPEC_STORE = null;
 
 /** finds a list of candidate elements in a session, based on a HTML element
  *
@@ -39,11 +39,11 @@ var SPEC_STORE = new Store("specs", { pretty: true });
  * returns an Array of Leadfoot::Element
  */
 var getCandidates = function (vnode, session) {
-    console.log("getCandidates() ======");
+    // console.log('getCandidates() ======');
     var classQueries = Promise.all(vnode.properties.className.split(" ").map(function (className) {
-        return session.findAllByClassName(className);
+        return session.findAllByClassName(className)["catch"](noop);
     }));
-    return Promise.all([session.findAllByTagName(vnode.tagName), classQueries, session.findById(vnode.properties.id)]);
+    return Promise.all([session.findAllByTagName(vnode.tagName)["catch"](noop), classQueries, session.findById(vnode.properties.id)["catch"](noop)]);
 };
 
 /** finds the best match from a list of candidates
@@ -56,8 +56,11 @@ var getCandidates = function (vnode, session) {
  * returns an Object, which is the best match.
  */
 var findBestMatch = function (vnode, candidates) {
-    console.log("findBestMatch() ======");
-    var candidates = candidates.map(function (candidate) {
+    // console.log('findBestMatch() ======');
+    var candidates = candidates
+    // FIXME: this is a little confusing and naive, simply counts the differences
+    .map(function (candidate) {
+
         var patches = diff(vnode, candidate.vnode);
         var topLevelDiffs = Object.keys(patches).length - 1;
 
@@ -67,14 +70,12 @@ var findBestMatch = function (vnode, candidates) {
                 return 0;
             }
 
-            return Object.keys(patches[item].patch).length;
+            return Object.keys(patches[item].patch).length; // get number of lower level diffs
         }).reduce(sum, 0);
 
         candidate.diffs = topLevelDiffs + deepDiffs;
         return candidate;
     });
-
-    console.log("candidates:", candidates);
 
     return _.sortBy(candidates, "diffs")[0]; // return the one with the least amount of diffs
 };
@@ -86,7 +87,7 @@ var findBestMatch = function (vnode, candidates) {
  * returns a string (outerHTML)
  */
 var elementsToHTML = function (list) {
-    console.log("elementsToHTML() ======");
+    // console.log('elementsToHTML() ======');
 
     var nodes = list.map(function (node) {
         return node.getProperty("outerHTML").then(function (outerHTML) {
@@ -116,14 +117,15 @@ var nodesToVDOM = function (list) {
  * retruns a Promise
  */
 var saveSpec = function (key, spec) {
-    console.log("saveSpec() ======");
+    // console.log('saveSpec() ======');
+
     return new Promise(function (resolve, reject) {
         SPEC_STORE.save(key, spec, function (err, res) {
             if (err) {
-                console.log("saveSpec::error on setting to store() ======");
+                // console.log('saveSpec::error on setting to store() ======');
                 reject(err);
             } else {
-                console.log("saveSpec::resolving on setting to store() ======");
+                // console.log('saveSpec::resolving on setting to store() ======');
                 resolve(res);
             }
         });
@@ -138,7 +140,7 @@ var saveSpec = function (key, spec) {
  * retruns a Promise
  */
 var getSpec = function (key) {
-    console.log("saveSpec() ======");
+    // console.log('getSpec() ======');
 
     return new Promise(function (resolve, reject) {
         SPEC_STORE.get(key, function (err, res) {
@@ -159,15 +161,25 @@ var getSpec = function (key) {
  */
 var removeDuplicateElements = _.partialRight(_.uniq, "_elementId");
 
+// removes undefined and falsy values
+var removeUndefined = function (arr) {
+    return arr.filter(function (item) {
+        return !!item;
+    });
+};
+
 var sum = function (fold, n) {
     return fold + n;
 };
 
 var ElementMatcher = (function () {
     function ElementMatcher() {
+        var opts = arguments[0] === undefined ? {} : arguments[0];
+
         _classCallCheck(this, ElementMatcher);
 
         console.log("ElementMatcher::constructor() =====");
+        SPEC_STORE = new Store(opts.path || "specs", { pretty: typeof opts.pretty === "undefined" ? true : opts.pretty });
     }
 
     _createClass(ElementMatcher, {
@@ -182,7 +194,7 @@ var ElementMatcher = (function () {
              */
 
             value: function get(session, key) {
-                console.log("ElementMatcher::get() ======", key);
+                // console.log("ElementMatcher::get() ======", key);
                 return Promise.resolve().then(function () {
 
                     if (!session) {
@@ -195,12 +207,23 @@ var ElementMatcher = (function () {
                     var findBestMatchForCurrentEl = _.partial(findBestMatch, originalElementVNode);
 
                     return getCandidates(originalElementVNode, session) // return [Leadfoot::Element...]
-                    .then(_.flattenDeep).then(removeDuplicateElements).then(elementsToHTML).then(nodesToVDOM).then(findBestMatchForCurrentEl).then(function (bestMatch) {
-                        // var el = createElement(bestMatch.vnode); // TODO: need to overwrite the spec with best match, ensuring it is up to date...
+                    .then(_.flattenDeep).then(removeDuplicateElements).then(removeUndefined).then(elementsToHTML).then(nodesToVDOM).then(findBestMatchForCurrentEl).then(function (bestMatch) {
+                        return bestMatch.original.getProperty("outerHTML").then(function (outerHTML) {
+
+                            if (spec.el === outerHTML) {
+                                return bestMatch;
+                            }
+
+                            spec[new Date().getTime()] = spec.el;
+                            spec.el = outerHTML;
+                            return saveSpec(key, spec).then(function () {
+                                return bestMatch;
+                            });
+                        });
+                    }).then(function (bestMatch) {
                         return bestMatch.original;
                     });
                 })["catch"](function (err) {
-                    console.log("err:", err);
                     throw err;
                 });
             }
@@ -213,13 +236,13 @@ var ElementMatcher = (function () {
              * session  - Leadfoot::Session
              * selector - string in CSS selector format that matches the element uniquely.
              *
-             * returns a Promise of a Leadfoot::Element.
+             * returns a Promise.
              */
 
             value: function set(key, session, selector) {
-                console.log("ElementMatcher::set() ======");
+                // console.log('ElementMatcher::set() ======');
 
-                // FIXME: we must check if the spec already exists, in order to avoid overwrites.
+                // FIXME: must we check if the spec already exists? in order to avoid overwrites.
 
                 return session.findAllByCssSelector(selector).then(function (elements) {
                     /** README: right now, we can set elements by passing a CSS selector and choosing the first element
@@ -232,7 +255,7 @@ var ElementMatcher = (function () {
 
                     var spec = {
                         name: key,
-                        selector: selector,
+                        selector: selector, // FIXME: this is never used again, is there a need to persist it?
                         el: el
                     };
 
