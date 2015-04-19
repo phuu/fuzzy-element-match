@@ -2,8 +2,6 @@
 
 var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
 
-var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; for (var _iterator = arr[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) { _arr.push(_step.value); if (i && _arr.length === i) break; } return _arr; } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } };
-
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
@@ -75,6 +73,8 @@ var findBestMatch = function (vnode, candidates) {
         candidate.diffs = topLevelDiffs + deepDiffs;
         return candidate;
     });
+
+    console.log("candidates:", candidates);
 
     return _.sortBy(candidates, "diffs")[0]; // return the one with the least amount of diffs
 };
@@ -163,19 +163,6 @@ var sum = function (fold, n) {
     return fold + n;
 };
 
-var doSome = function (f) {
-    return function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2);
-
-        var candidates = _ref2[0];
-        var data = _ref2[1];
-
-        return Promise.resolve(f(data)).then(function (res) {
-            return [candidates, res];
-        });
-    };
-};
-
 var ElementMatcher = (function () {
     function ElementMatcher() {
         _classCallCheck(this, ElementMatcher);
@@ -209,10 +196,7 @@ var ElementMatcher = (function () {
 
                     return getCandidates(originalElementVNode, session) // return [Leadfoot::Element...]
                     .then(_.flattenDeep).then(removeDuplicateElements).then(elementsToHTML).then(nodesToVDOM).then(findBestMatchForCurrentEl).then(function (bestMatch) {
-                        // TODO: need to overwrite the spec with best match, ensuring it is up to date...
-                        // var el = createElement(bestMatch.vnode);
-                        console.log("should return best match ======");
-                        console.log("bestMatch:", bestMatch);
+                        // var el = createElement(bestMatch.vnode); // TODO: need to overwrite the spec with best match, ensuring it is up to date...
                         return bestMatch.original;
                     });
                 })["catch"](function (err) {

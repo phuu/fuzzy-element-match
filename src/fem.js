@@ -61,6 +61,8 @@ var findBestMatch = (vnode, candidates) => {
             return candidate;
         });
 
+    console.log('candidates:', candidates);
+
     return _.sortBy(candidates, 'diffs')[0]; // return the one with the least amount of diffs
 };
 
@@ -140,13 +142,6 @@ var removeDuplicateElements = _.partialRight(_.uniq, '_elementId');
 
 var sum = (fold, n) => fold + n;
 
-var doSome = f => ([candidates, data]) => {
-    return Promise.resolve(f(data))
-        .then((res) => {
-            return [candidates, res];
-        });
-};
-
 export default class ElementMatcher {
 
     constructor() {
@@ -182,10 +177,7 @@ export default class ElementMatcher {
                     .then(nodesToVDOM)
                     .then(findBestMatchForCurrentEl)
                     .then(bestMatch => {
-                        // TODO: need to overwrite the spec with best match, ensuring it is up to date...
-                        // var el = createElement(bestMatch.vnode);
-                        console.log('should return best match ======');
-                        console.log('bestMatch:', bestMatch);
+                        // var el = createElement(bestMatch.vnode); // TODO: need to overwrite the spec with best match, ensuring it is up to date...
                         return bestMatch.original;
                     });
             })
