@@ -12,7 +12,7 @@
   },
   "name": "integrator-match",
   "description": "fuzzy-element-match ===",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "main": "fem.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
