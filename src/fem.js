@@ -45,8 +45,11 @@ var SPEC_STORE = null;
  */
 var getCandidates = (vnode, session) => {
     // console.log('getCandidates() ======');
-    var classQueries = Promise.all(vnode.properties.className.split(' ').map(className =>  session.findAllByClassName(className).catch(noop)));
-    return Promise.all([session.findAllByTagName(vnode.tagName).catch(noop), classQueries, session.findById(vnode.properties.id).catch(noop)]);
+    return Promise.all([
+        session.findAllByTagName(vnode.tagName).catch(noop),
+        Promise.all(vnode.properties.className.split(' ').map(className => session.findAllByClassName(className).catch(noop))),
+        session.findById(vnode.properties.id).catch(noop)
+    ]);
 };
 
 /** finds the best match from a list of candidates

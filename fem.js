@@ -61,10 +61,9 @@ var SPEC_STORE = null;
  */
 var getCandidates = function (vnode, session) {
     // console.log('getCandidates() ======');
-    var classQueries = Promise.all(vnode.properties.className.split(" ").map(function (className) {
+    return Promise.all([session.findAllByTagName(vnode.tagName)["catch"](noop), Promise.all(vnode.properties.className.split(" ").map(function (className) {
         return session.findAllByClassName(className)["catch"](noop);
-    }));
-    return Promise.all([session.findAllByTagName(vnode.tagName)["catch"](noop), classQueries, session.findById(vnode.properties.id)["catch"](noop)]);
+    })), session.findById(vnode.properties.id)["catch"](noop)]);
 };
 
 /** finds the best match from a list of candidates
