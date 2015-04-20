@@ -1,27 +1,40 @@
 [integrator](https://github.com/phuu/integrator)-match
 ===
 
+> NOTE: Documentation in Progress!
+
 Part of an ambitious experiment at "fixing" integration tests.
 
 ## Reasoning
 
-Integration tests are hard to write, harder to maintain and incredibly brittle. This module aims to solve how these tests interact with DOM Elements. It "keeps track" of an "entity" – such as a login button – based on a [`Spec`](). Referring to it just like a human would.
+Integration tests are hard to write, harder to maintain and incredibly brittle. This module aims to solve how these tests interact with DOM Elements. It "keeps track" of an "entity" – such as a login button – based on a [`Spec`](#spec). Referring to it just like a human would.
 
 ## Concepts
 
-### `Spec`
+#### `Spec`
+
+Simply a representation of an element. Not a lot more than the current element itself (`element.outerHTML`) and a `name`, which is unique. It allows for an element to be regarded to as a key, rather than a CSS rule; therefore avoiding brittleness when testing with interactive elements. See below an example `Spec`.
+
+```json
+{
+    "name": "myInput",
+    "el": "<input class='js-todo-input' type='text'>Login!</input>"
+}
+```
+
+Whenever a change happens to the tracked element, the `el` property becomes the latest `outerHTML` and a timestamp attribute is added with the previous state.
 
 ## Requirements
 
-- [Leadfoot](https://github.com/theintern/leadfoot)
+- [Leadfoot](https://github.com/theintern/leadfoot) – "A JavaScript client library that brings cross-platform consistency to the Selenium WebDriver API."
 
 ## Installation
 
-`npm i --save integrator-match`.
+`npm i --save integrator-match`
 
 ## Usage
 
-Assume you want to track a login button for you app. e.g. `<button id='myLoginButton' class='btn btn--primary' onclick='javascript:alert("wanna tracking me?");'>Login!</button>`
+Assume you want to track a login button for you app. e.g. `<button id='myLoginButton' class='btn btn--primary' onclick='javascript:alert("wanna track me?");'>Login!</button>`
 
 ```javascript
 var ElementMatcher = require('integrator-match');
@@ -37,7 +50,7 @@ server
         return _session.get('http://localhost:9876');
     })
     .then(function (session) {
-        return tracker.set('myLoginButton', session, '#myLoginButton');
+        return matcher.set('myLoginButton', session, '#myLoginButton');
     });
 ```
 
@@ -47,7 +60,7 @@ A file named `myLoginButton.json`, should be created under the folder `mySpecs` 
 {
     "name": "myLoginButton",
     "selector": "#myLoginButton",
-    "el": "`<button id='myLoginButton' class='btn btn--primary' onclick='javascript:alert(\'wanna tracking me?\');'>Login!</button>"
+    "el": "<button id='myLoginButton' class='btn btn--primary' onclick='javascript:alert(\"wanna track me?\");'>Login!</button>"
 }
 ```
 
@@ -73,7 +86,7 @@ server
         return _session.get('http://localhost:9876');
     })
     .then(function (session) {
-        return tracker.get('myLoginButton', session);
+        return matcher.get(session, 'myLoginButton');
     })
     .then(function (el) {
         el.click(); // Leadfoot::Element
@@ -88,8 +101,8 @@ Your `myLoginButton.json` will now look like:
 {
     "name": "myLoginButton",
     "selector": "#myLoginButton",
-    "el": "<button id='loginButton' class='btn btn--secondary' onclick='javascript:alert("wanna tracking me?");'>Login Now</button>"
-    "1429476475744": "`<button id='myLoginButton' class='btn btn--primary' onclick='javascript:alert("wanna tracking me?");'>Login!</button>"
+    "el": "<button id='loginButton' class='btn btn--secondary' onclick='javascript:alert(\"wanna track me?\");'>Login Now</button>",
+    "1429476475744": "<button id='myLoginButton' class='btn btn--primary' onclick='javascript:alert(\"wanna track me?\");'>Login!</button>"
 }
 ```
 
@@ -110,10 +123,33 @@ Saves a new `Spec` under the specified folder path. Return { TODO }.
 - `[String selector]`: CSS selector used to find the element.
 
 
-#### `ElementMatcher.get(key, session)` -> `Promise`
+#### `ElementMatcher.get(session, key)` -> `Promise`
 
 Retrieves a spec from disk. Returning a `Promise` of a `Leadfoot::Element`.
 
-- `[String key]`: unique identifier to the spec as well as file name.
 - `[Leadfoot::Session session]`: the session in which to search for the element.
+- `[String key]`: unique identifier to the spec as well as file name.
 
+## License
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Walter Carvalho & Tom Ashworth
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
