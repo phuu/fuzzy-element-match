@@ -25,6 +25,27 @@ var htmlToVDOM = toVdom({
 
 var noop = function () {};
 
+/** removes duplicate elements from a list
+ *
+ * list -> Array of Leadfoot::Element
+ *
+ * returns the filtered list
+ */
+var removeDuplicateElements = _.partialRight(_.uniq, "_elementId");
+
+/** removes undefined and falsy values **/
+var removeUndefined = function (arr) {
+    return arr.filter(function (item) {
+        return !!item;
+    });
+};
+
+var flattenDedupeSanitise = _.compose(removeUndefined, removeDuplicateElements, _.flattenDeep);
+
+var sum = function (fold, n) {
+    return fold + n;
+};
+
 /** specifies where all the specs are persisted – https://github.com/flosse/json-file-store#json-file-store
  *
  * FIXME: we must be able to initialise it with a custom path, move it into constructor?
@@ -88,14 +109,11 @@ var findBestMatch = function (vnode, candidates) {
  */
 var elementsToHTML = function (list) {
     // console.log('elementsToHTML() ======');
-
-    var nodes = list.map(function (node) {
+    return Promise.all(list.map(function (node) {
         return node.getProperty("outerHTML").then(function (outerHTML) {
             return { original: node, html: outerHTML };
         });
-    });
-
-    return Promise.all(nodes);
+    }));
 };
 
 /** converts HTML strings to VDOM Nodes
@@ -122,13 +140,13 @@ var saveSpec = function (key, spec) {
     return new Promise(function (resolve, reject) {
         SPEC_STORE.save(key, spec, function (err, res) {
             if (err) {
-                // console.log('saveSpec::error on setting to store() ======');
                 reject(err);
             } else {
-                // console.log('saveSpec::resolving on setting to store() ======');
                 resolve(res);
             }
         });
+    })["catch"](function () {
+        throw new Error("'ElementMatcher: Could not save Spec " + key + " to " + SPEC_STORE._dir);
     });
 };
 
@@ -150,26 +168,9 @@ var getSpec = function (key) {
                 resolve(res);
             }
         });
+    })["catch"](function () {
+        throw new Error("'ElementMatcher: Could not load Spec " + key + " from " + SPEC_STORE._dir);
     });
-};
-
-/** removes duplicate elements from a list
- *
- * list -> Array of Leadfoot::Element
- *
- * returns the filtered list
- */
-var removeDuplicateElements = _.partialRight(_.uniq, "_elementId");
-
-// removes undefined and falsy values
-var removeUndefined = function (arr) {
-    return arr.filter(function (item) {
-        return !!item;
-    });
-};
-
-var sum = function (fold, n) {
-    return fold + n;
 };
 
 var ElementMatcher = (function () {
@@ -178,7 +179,6 @@ var ElementMatcher = (function () {
 
         _classCallCheck(this, ElementMatcher);
 
-        // console.log('ElementMatcher::constructor() =====');
         SPEC_STORE = new Store(opts.path || "specs", { pretty: typeof opts.pretty === "undefined" ? true : opts.pretty });
     }
 
@@ -203,11 +203,12 @@ var ElementMatcher = (function () {
 
                     return getSpec(key);
                 }).then(function (spec) {
+
                     var originalElementVNode = htmlToVDOM(spec.el);
                     var findBestMatchForCurrentEl = _.partial(findBestMatch, originalElementVNode);
 
                     return getCandidates(originalElementVNode, session) // return [Leadfoot::Element...]
-                    .then(_.flattenDeep).then(removeDuplicateElements).then(removeUndefined).then(elementsToHTML).then(nodesToVDOM).then(findBestMatchForCurrentEl).then(function (bestMatch) {
+                    .then(flattenDedupeSanitise).then(elementsToHTML).then(nodesToVDOM).then(findBestMatchForCurrentEl).then(function (bestMatch) {
                         return bestMatch.original.getProperty("outerHTML").then(function (outerHTML) {
 
                             if (spec.el === outerHTML) {
