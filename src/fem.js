@@ -15,6 +15,21 @@ const htmlToVDOM = toVdom({
 
 const noop = () => {};
 
+/** removes duplicate elements from a list
+ *
+ * list -> Array of Leadfoot::Element
+ *
+ * returns the filtered list
+ */
+var removeDuplicateElements = _.partialRight(_.uniq, '_elementId');
+
+/** removes undefined and falsy values **/
+var removeUndefined = arr => arr.filter(item => !!item);
+
+var flattenDedupeSanitise = _.compose(removeUndefined, removeDuplicateElements, _.flattenDeep);
+
+var sum = (fold, n) => fold + n;
+
 /** specifies where all the specs are persisted – https://github.com/flosse/json-file-store#json-file-store
  *
  * FIXME: we must be able to initialise it with a custom path, move it into constructor?
@@ -76,13 +91,12 @@ var findBestMatch = (vnode, candidates) => {
  */
 var elementsToHTML = list => {
     // console.log('elementsToHTML() ======');
-
-    let nodes = list.map(node => {
-        return node.getProperty('outerHTML').then(outerHTML => ({ original: node, html: outerHTML }));
-    });
-
-    return Promise.all(nodes);
-}
+    return Promise.all(list
+        .map(node => {
+            return node.getProperty('outerHTML').then(outerHTML => ({ original: node, html: outerHTML }));
+        })
+    );
+};
 
 /** converts HTML strings to VDOM Nodes
  *
@@ -104,13 +118,13 @@ var saveSpec = (key, spec) => {
     return new Promise((resolve, reject) => {
         SPEC_STORE.save(key, spec, (err, res) => {
             if (err) {
-                // console.log('saveSpec::error on setting to store() ======');
                 reject(err);
             } else {
-                // console.log('saveSpec::resolving on setting to store() ======');
                 resolve(res);
             }
-        })
+        });
+    }).catch(() => {
+        throw new Error(`'ElementMatcher: Could not save Spec ${ key } to ${ SPEC_STORE._dir }`);
     });
 };
 
@@ -131,29 +145,15 @@ var getSpec = key => {
             } else {
                 resolve(res);
             }
-        })
+        });
+    }).catch(() => {
+        throw new Error(`'ElementMatcher: Could not load Spec ${ key } from ${ SPEC_STORE._dir }`);
     });
 };
-
-/** removes duplicate elements from a list
- *
- * list -> Array of Leadfoot::Element
- *
- * returns the filtered list
- */
-var removeDuplicateElements = _.partialRight(_.uniq, '_elementId');
-
-// removes undefined and falsy values
-var removeUndefined = arr => {
-    return arr.filter(item => !!item);
-};
-
-var sum = (fold, n) => fold + n;
 
 export default class ElementMatcher {
 
     constructor(opts={ }) {
-        // console.log('ElementMatcher::constructor() =====');
         SPEC_STORE = new Store(opts.path || 'specs', { pretty: typeof opts.pretty === 'undefined' ? true : opts.pretty });
     }
 
@@ -176,13 +176,12 @@ export default class ElementMatcher {
                 return getSpec(key);
             })
             .then(spec => {
+
                 let originalElementVNode = htmlToVDOM(spec.el);
                 let findBestMatchForCurrentEl = _.partial(findBestMatch, originalElementVNode);
 
                 return getCandidates(originalElementVNode, session) // return [Leadfoot::Element...]
-                    .then(_.flattenDeep)
-                    .then(removeDuplicateElements)
-                    .then(removeUndefined)
+                    .then(flattenDedupeSanitise)
                     .then(elementsToHTML)
                     .then(nodesToVDOM)
                     .then(findBestMatchForCurrentEl)
