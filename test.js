@@ -22,7 +22,7 @@ server
         return _session.get('http://localhost:9876');
     })
     // .then(function () {
-    //     return tracker.set('myLogin', session, '#Somethin');
+    //     return tracker.set('myLogin', session, '#myLogin');
     // })
     .then(function () {
         return tracker.get(session, 'myLogin');
@@ -31,7 +31,7 @@ server
         return el.click();
     })
     .catch(function (err) {
-        console.log('errored() ======');
+        // console.log(err);
     })
     .then(function () {
         // quitSession();
