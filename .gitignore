@@ -1,4 +1,5 @@
 node_modules/
+specs/
 jspm_packages/
 build/
 fuzzy-element-match.sublime-project
