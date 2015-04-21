@@ -6,6 +6,8 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
+var Immutable = _interopRequire(require("immutable"));
+
 var VNode = _interopRequire(require("virtual-dom/vnode/vnode"));
 
 var VText = _interopRequire(require("virtual-dom/vnode/vtext"));
@@ -60,10 +62,41 @@ var SPEC_STORE = null;
  * returns an Array of Leadfoot::Element
  */
 var getCandidates = function (vnode, session) {
-    // console.log('getCandidates() ======');
     return Promise.all([session.findAllByTagName(vnode.tagName)["catch"](noop), Promise.all(vnode.properties.className.split(" ").map(function (className) {
         return session.findAllByClassName(className)["catch"](noop);
     })), session.findById(vnode.properties.id)["catch"](noop)]);
+};
+
+/** converts Leadfoot::Element(s) to outerHTML
+ *
+ * list - List of Leadfoot::Element(s)
+ *
+ * returns a string (outerHTML)
+ */
+var elementsToHTML = function (list) {
+    // console.log('elementsToHTML() ======', list);
+    return Promise.resolve().then(function () {
+        if (list.length === 0) {
+            throw new Error("ElementMatcher: No candidate nodes were found on the page.");
+        }
+        return Promise.all(list.map(function (node) {
+            return node.getProperty("outerHTML").then(function (outerHTML) {
+                return Immutable.Map({ original: node, html: outerHTML });
+            });
+        }));
+    });
+};
+
+/** converts HTML strings to VDOM Nodes
+ *
+ * list - List of Immutable::Map(s) like { original: Leadfoot::Element, html: String }
+ *
+ * returns a list of VirtualNode(s)
+ */
+var nodesToVDOM = function (list) {
+    return list.map(function (node) {
+        return node.set("vnode", htmlToVDOM(node.get("html")));
+    });
 };
 
 /** finds the best match from a list of candidates
@@ -81,7 +114,7 @@ var findBestMatch = function (vnode, candidates) {
     // FIXME: this is a little confusing and naive, simply counts the differences
     .map(function (candidate) {
 
-        var patches = diff(vnode, candidate.vnode);
+        var patches = diff(vnode, candidate.get("vnode"));
         var topLevelDiffs = Object.keys(patches).length - 1;
 
         var deepDiffs = Object.keys(patches).map(function (item) {
@@ -90,41 +123,15 @@ var findBestMatch = function (vnode, candidates) {
                 return 0;
             }
 
-            return Object.keys(patches[item].patch).length; // get number of lower level diffs
+            var patch = patches[item].patch;
+
+            return patch ? Object.keys(patch).length : 0; // get number of lower level diffs
         }).reduce(sum, 0);
 
-        candidate.diffs = topLevelDiffs + deepDiffs;
-        return candidate;
+        return candidate.set("diffs", topLevelDiffs + deepDiffs);
     });
 
     return _.sortBy(candidates, "diffs")[0]; // return the one with the least amount of diffs
-};
-
-/** converts Leadfoot::Element(s) to outerHTML
- *
- * list - List of Leadfoot::Element(s)
- *
- * returns a string (outerHTML)
- */
-var elementsToHTML = function (list) {
-    // console.log('elementsToHTML() ======');
-    return Promise.all(list.map(function (node) {
-        return node.getProperty("outerHTML").then(function (outerHTML) {
-            return { original: node, html: outerHTML };
-        });
-    }));
-};
-
-/** converts HTML strings to VDOM Nodes
- *
- * list - List of objects like { original: Leadfoot::Element, html: String }
- *
- * returns a list of VirtualNode(s)
- */
-var nodesToVDOM = function (list) {
-    return list.map(function (node) {
-        return { original: node.original, html: node.html, vnode: htmlToVDOM(node.html) };
-    });
 };
 
 /** promisifies the saving of a spec to store
@@ -135,7 +142,6 @@ var nodesToVDOM = function (list) {
  */
 var saveSpec = function (key, spec) {
     // console.log('saveSpec() ======');
-
     return new Promise(function (resolve, reject) {
         SPEC_STORE.save(key, spec, function (err, res) {
             if (err) {
@@ -208,8 +214,10 @@ var ElementMatcher = (function () {
 
                     return getCandidates(originalElementVNode, session) // return [Leadfoot::Element...]
                     .then(flattenDedupeSanitise).then(elementsToHTML).then(nodesToVDOM).then(findBestMatchForCurrentEl).then(function (bestMatch) {
-                        return bestMatch.original.getProperty("outerHTML").then(function (outerHTML) {
 
+                        var bestMatch = bestMatch.get("original");
+
+                        return bestMatch.getProperty("outerHTML").then(function (outerHTML) {
                             if (spec.el === outerHTML) {
                                 return bestMatch;
                             }
@@ -220,8 +228,6 @@ var ElementMatcher = (function () {
                                 return bestMatch;
                             });
                         });
-                    }).then(function (bestMatch) {
-                        return bestMatch.original;
                     });
                 })["catch"](function (err) {
                     throw err;

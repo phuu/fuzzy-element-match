@@ -1,5 +1,7 @@
 'use strict';
 
+import Immutable from 'immutable';
+
 import VNode from 'virtual-dom/vnode/vnode';
 import VText from 'virtual-dom/vnode/vtext';
 import diff from 'virtual-dom/diff';
@@ -44,13 +46,40 @@ var SPEC_STORE = null;
  * returns an Array of Leadfoot::Element
  */
 var getCandidates = (vnode, session) => {
-    // console.log('getCandidates() ======');
     return Promise.all([
         session.findAllByTagName(vnode.tagName).catch(noop),
         Promise.all(vnode.properties.className.split(' ').map(className => session.findAllByClassName(className).catch(noop))),
         session.findById(vnode.properties.id).catch(noop)
     ]);
 };
+
+/** converts Leadfoot::Element(s) to outerHTML
+ *
+ * list - List of Leadfoot::Element(s)
+ *
+ * returns a string (outerHTML)
+ */
+var elementsToHTML = list => {
+    // console.log('elementsToHTML() ======', list);
+    return Promise.resolve()
+        .then(() => {
+            if (list.length === 0) {
+                throw new Error('ElementMatcher: No candidate nodes were found on the page.');
+            }
+            return Promise.all(list.map(node => {
+                    return node.getProperty('outerHTML').then(outerHTML => Immutable.Map({ original: node, html: outerHTML }));
+                })
+            );
+        });
+};
+
+/** converts HTML strings to VDOM Nodes
+ *
+ * list - List of Immutable::Map(s) like { original: Leadfoot::Element, html: String }
+ *
+ * returns a list of VirtualNode(s)
+ */
+var nodesToVDOM = list => list.map(node => node.set('vnode', htmlToVDOM(node.get('html'))));
 
 /** finds the best match from a list of candidates
  *
@@ -67,7 +96,7 @@ var findBestMatch = (vnode, candidates) => {
         // FIXME: this is a little confusing and naive, simply counts the differences
         .map(candidate => {
 
-            let patches = diff(vnode, candidate.vnode);
+            let patches = diff(vnode, candidate.get('vnode'));
             let topLevelDiffs = Object.keys(patches).length - 1;
 
             let deepDiffs = Object.keys(patches).map(item => {
@@ -76,38 +105,16 @@ var findBestMatch = (vnode, candidates) => {
                     return 0;
                 }
 
-                return Object.keys(patches[item].patch).length; // get number of lower level diffs
+                let patch = patches[item].patch;
+
+                return patch ? Object.keys(patch).length : 0; // get number of lower level diffs
             }).reduce(sum, 0);
 
-            candidate.diffs = topLevelDiffs + deepDiffs;
-            return candidate;
+            return candidate.set('diffs', topLevelDiffs + deepDiffs);
         });
 
     return _.sortBy(candidates, 'diffs')[0]; // return the one with the least amount of diffs
 };
-
-/** converts Leadfoot::Element(s) to outerHTML
- *
- * list - List of Leadfoot::Element(s)
- *
- * returns a string (outerHTML)
- */
-var elementsToHTML = list => {
-    // console.log('elementsToHTML() ======');
-    return Promise.all(list
-        .map(node => {
-            return node.getProperty('outerHTML').then(outerHTML => ({ original: node, html: outerHTML }));
-        })
-    );
-};
-
-/** converts HTML strings to VDOM Nodes
- *
- * list - List of objects like { original: Leadfoot::Element, html: String }
- *
- * returns a list of VirtualNode(s)
- */
-var nodesToVDOM = list => list.map(node => ({ original: node.original, html: node.html, vnode: htmlToVDOM(node.html) }));
 
 /** promisifies the saving of a spec to store
  * key  - the key to save the spec under, also the file name.
@@ -117,7 +124,6 @@ var nodesToVDOM = list => list.map(node => ({ original: node.original, html: nod
  */
 var saveSpec = (key, spec) => {
     // console.log('saveSpec() ======');
-
     return new Promise((resolve, reject) => {
         SPEC_STORE.save(key, spec, (err, res) => {
             if (err) {
@@ -189,9 +195,11 @@ export default class ElementMatcher {
                     .then(nodesToVDOM)
                     .then(findBestMatchForCurrentEl)
                     .then(bestMatch => {
-                        return bestMatch.original.getProperty('outerHTML')
-                            .then(outerHTML => {
 
+                        let bestMatch = bestMatch.get('original');
+
+                        return bestMatch.getProperty('outerHTML')
+                            .then(outerHTML => {
                                 if (spec.el === outerHTML) {
                                     return bestMatch;
                                 }
@@ -203,9 +211,6 @@ export default class ElementMatcher {
                                         return bestMatch;
                                     });
                             });
-                    })
-                    .then(bestMatch => {
-                        return bestMatch.original;
                     });
             })
             .catch(err => {
