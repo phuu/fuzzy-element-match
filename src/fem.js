@@ -218,6 +218,10 @@ export default class ElementMatcher {
             });
     }
 
+    saveSpec(key, spec) {
+        return saveSpec(key, spec);
+    }
+
     /** allows the insertion of a new Spec
      *
      * key      - string of the unique identifier for a spec, also its file name.

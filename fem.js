@@ -234,6 +234,21 @@ var ElementMatcher = (function () {
                 });
             }
         },
+        saveSpec: {
+            value: (function (_saveSpec) {
+                var _saveSpecWrapper = function saveSpec(_x, _x2) {
+                    return _saveSpec.apply(this, arguments);
+                };
+
+                _saveSpecWrapper.toString = function () {
+                    return _saveSpec.toString();
+                };
+
+                return _saveSpecWrapper;
+            })(function (key, spec) {
+                return saveSpec(key, spec);
+            })
+        },
         set: {
 
             /** allows the insertion of a new Spec

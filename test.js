@@ -19,20 +19,25 @@ server
     .createSession({ browserName: 'chrome' })
     .then(function (_session) {
         return _session
-            .get('http://localhost:9876').then(function () {
+            .get('http://localhost:8080')
+            .then(function () {
                 session = _session;
             });
     })
     .then(function () {
-        // console.log('session:', session);
-        return tracker.get(session, 'myLogin');
+        return tracker.get(session, 'SendFlowers');
     })
     .then(function (el) {
-        return el.click();
+        console.log('will click on element ======');
+        return el.click()
+            .then(function () {
+                console.log('click() ======');
+            });
     })
     .catch(function (err) {
         console.log(err);
     })
     .then(function () {
+        console.log('should quit() ======');
         // quitSession();
     });

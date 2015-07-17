@@ -5,8 +5,10 @@
     "webdriver-manager": "^4.0.0"
   },
   "dependencies": {
-    "immutable": "^3.7.2",
+    "body-parser": "^1.12.3",
+    "express": "^4.12.3",
     "html-to-vdom": "^0.5.5",
+    "immutable": "^3.7.2",
     "jfs": "^0.2.5",
     "lodash": "^3.7.0",
     "virtual-dom": "^2.0.1"
